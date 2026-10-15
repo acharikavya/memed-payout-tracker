@@ -30,4 +30,13 @@ describe("API health check", () => {
 
     expect(response.status).toBe(400);
   });
+  
+  it("rejects view updates without authentication", async () => {
+    const response = await request(app)
+      .patch("/api/submissions/507f1f77bcf86cd799439011/views")
+      .send({ views: 10000 });
+
+    expect(response.status).toBe(401);
+  });
+
 });

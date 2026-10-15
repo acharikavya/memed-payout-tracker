@@ -5,6 +5,7 @@ import { Campaign } from "../models/Campaign";
 import { Submission } from "../models/Submission";
 import { updateSubmissionViews } from "../services/submission.service";
 
+
 const createSubmissionSchema = z.object({
   campaignId: z.string().regex(/^[a-f\d]{24}$/i, "Invalid campaign ID"),
   postUrl: z.string().url().max(2048),
@@ -78,6 +79,7 @@ export async function createSubmission(
   }
 }
 
+
 export async function updateViews(
   req: AuthRequest,
   res: Response,
@@ -85,17 +87,36 @@ export async function updateViews(
 ): Promise<void> {
   try {
     const input = updateViewsSchema.parse(req.body);
-const submissionId = req.params.id;
+    const submissionId = req.params.id;
 
-if (typeof submissionId !== "string") {
-  res.status(400).json({ message: "Invalid submission ID" });
-  return;
-}
+    if (typeof submissionId !== "string") {
+      res.status(400).json({ message: "Invalid submission ID" });
+      return;
+    }
 
-const result = await updateSubmissionViews({
-  submissionId,
-  views: input.views,
-});
+    if (!req.user) {
+      res.status(401).json({ message: "Authentication required" });
+      return;
+    }
+
+    const submission = await Submission.findById(submissionId);
+
+    if (!submission) {
+      res.status(404).json({ message: "Submission not found" });
+      return;
+    }
+
+    if (submission.creatorId.toString() !== req.user.id) {
+      res.status(403).json({
+        message: "You can only update your own submissions",
+      });
+      return;
+    }
+
+    const result = await updateSubmissionViews({
+      submissionId,
+      views: input.views,
+    });
 
     res.status(200).json({
       message: "Views updated successfully",
@@ -105,6 +126,7 @@ const result = await updateSubmissionViews({
     next(error);
   }
 }
+
 
 export async function listMySubmissions(
   req: AuthRequest,

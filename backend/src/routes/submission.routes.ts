@@ -10,6 +10,11 @@ const router = Router();
 
 router.get("/mine", authenticate, authorize("creator"), listMySubmissions);
 router.post("/", authenticate, authorize("creator"), createSubmission);
-router.patch("/:id/views", updateViews);
+router.patch(
+  "/:id/views",
+  authenticate,
+  authorize("creator"),
+  updateViews
+);
 
 export default router;
